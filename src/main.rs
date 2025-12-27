@@ -1,8 +1,7 @@
 extern crate sdl3;
 
 use sdl3::{
-    event::Event, 
-    pixels::{Color}
+    event::Event,
 };
 use std::time::{Instant};
 
@@ -15,6 +14,11 @@ mod events;
 use events::{
     key_handler::Keys,
     key_handler::key_handler
+};
+
+mod tiles;
+use tiles::{
+    tile_handler::TileHandler
 };
 
 /// Entry point for the 2D Adventure game.
@@ -48,6 +52,7 @@ fn main() -> Result< (), String> {
     // Convert window to canvas for 2D rendering
     let mut canvas = window.into_canvas();
     let texture_creator = canvas.texture_creator();
+    let tile_handler = TileHandler::new(&texture_creator);
     canvas.clear();
 
     // ========== INPUT STATE ==========
@@ -110,8 +115,8 @@ fn main() -> Result< (), String> {
             };
 
             // ===== RENDER PHASE =====
-            canvas.set_draw_color(Color::BLACK);
-            canvas.clear();                         // Clear previous frame
+            tile_handler.draw_map( max_screen_row, &mut canvas, &tile_handler.maps[0]);
+                                                   // Clear previous frame
             player.render(&mut canvas, &keys);      // Draw player sprite
             canvas.present();                       // Display rendered frame
 
