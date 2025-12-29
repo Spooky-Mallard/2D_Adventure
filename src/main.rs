@@ -7,7 +7,8 @@ use std::time::{Instant};
 
 mod entities;
 use entities::{
-    player::Player
+    player::Player,
+    camera::Camera
 };
 
 mod events;
@@ -52,7 +53,7 @@ fn main() -> Result< (), String> {
     // Convert window to canvas for 2D rendering
     let mut canvas = window.into_canvas();
     let texture_creator = canvas.texture_creator();
-    let tile_handler = TileHandler::new(&texture_creator);
+    let tile_handler = TileHandler::new(tile_size, &texture_creator);
     canvas.clear();
 
     // ========== INPUT STATE ==========
@@ -69,7 +70,17 @@ fn main() -> Result< (), String> {
 
     // ========== PLAYER INITIALIZATION ==========
     // Create player at position (100, 100) with speed 3 pixels per frame
-    let mut player: Player = Player::new(100, 100, 3, tile_size, &texture_creator);
+    let mut camera: Camera = Camera::new(
+        100,
+        100,
+        screen_width, 
+        screen_height, 
+        3
+    );
+    let mut player: Player = Player::new(
+        (screen_width/2 - tile_size/2) as i32 , 
+        (screen_height/2 - tile_size/2) as i32 ,
+         3, tile_size, &texture_creator);
 
     // ========== FRAME TIMING SETUP ==========
     // Fixed timestep game loop: run at exactly 60 FPS
@@ -100,7 +111,8 @@ fn main() -> Result< (), String> {
             }
 
             // ===== UPDATE PHASE =====
-            // Update player position based on current key states
+            // Update player position based on current key states\
+            camera.update(&mut keys);
             player.update(&mut keys);
 
             // ===== ANIMATION TIMING =====
@@ -115,7 +127,16 @@ fn main() -> Result< (), String> {
             };
 
             // ===== RENDER PHASE =====
-            tile_handler.draw_map( max_screen_row, &mut canvas, &tile_handler.maps[0]);
+            camera.draw_camera(
+                tile_handler.maps[1].row_len(),
+                tile_handler.maps[1].col_len(), 
+                max_screen_row,
+                max_screen_col,
+                &tile_handler, 
+                &mut canvas, 
+                &tile_handler.maps[1]
+            );
+            // tile_handler.draw_map( max_screen_row, &mut canvas, &tile_handler.maps[0]);
                                                    // Clear previous frame
             player.render(&mut canvas, &keys);      // Draw player sprite
             canvas.present();                       // Display rendered frame

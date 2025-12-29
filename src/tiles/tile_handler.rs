@@ -3,21 +3,37 @@ extern crate sdl3;
 use std::{fs, io::BufReader};
 use std::io::BufRead;
 
-use sdl3::{rect::Rect, render::{Canvas, Texture, TextureCreator}, surface::Surface, video::{Window, WindowContext}};
+use sdl3::{
+    rect::Rect, 
+    render::{Canvas, Texture, TextureCreator}, 
+    surface::Surface, 
+    video::{Window, WindowContext}
+};
 
-struct Tile<'a> {
-    image: Texture<'a>,
+pub struct Tile<'a> {
+    pub image: Texture<'a>,
     collision: bool
 }
-
+// [[i32; 16]; 12]
 pub struct Map{
-    map: [[i32; 16]; 12]
+    pub map: Vec<Vec<i32>>
 }
 
 pub struct TileHandler<'a>{
-    tiles: Vec<Tile<'a>>,
+    pub tiles: Vec<Tile<'a>>,
+    pub tile_size: u32,
     pub maps: Vec<Map>
 
+}
+
+impl Map {
+    pub fn row_len(&self) -> u32{
+        self.map.len() as u32
+    }
+
+    pub fn col_len(&self) -> u32{
+        self.map[0].len() as u32
+    }
 }
 
 impl<'a> Tile<'a> {
@@ -31,8 +47,8 @@ impl<'a> Tile<'a> {
 
 impl<'a> TileHandler<'a> {
 
-    pub fn new(texture_creator: &'a TextureCreator<WindowContext>) -> Self {
-        let mut tile_handler = Self { tiles: Vec::new() , maps: Vec::new()};
+    pub fn new(tile_size: u32, texture_creator: &'a TextureCreator<WindowContext>) -> Self {
+        let mut tile_handler = Self { tiles: Vec::new() , tile_size: tile_size, maps: Vec::new()};
         tile_handler.load_tiles(texture_creator);
         tile_handler.load_maps();
         tile_handler
@@ -90,7 +106,7 @@ impl<'a> TileHandler<'a> {
         for path in map_paths{
             let f = fs::File::open(path).ok().unwrap();
             let mut reader = BufReader::new(f);
-            let mut map = Map{map: [[0; 16]; 12]};
+            let mut map = Map{map: Vec::new()};
             let mut row = 0;
             
             'loop1: loop{
@@ -98,11 +114,14 @@ impl<'a> TileHandler<'a> {
                 let len = reader.read_line(&mut line)
                     .expect("failed to read");
                 if len == 0{break 'loop1;}
+                let mut col_vec = Vec::new();
                 
-                'loop2: for (col,tile) in line.split_whitespace().enumerate(){
+                'loop2: for tile in line.split_whitespace(){
                     if tile == "\n" {continue 'loop2}
-                    map.map[row][col] = tile.parse().unwrap();
+                    col_vec.push(tile.parse().unwrap());
                 }
+
+                map.map.insert(row, col_vec);
                 row += 1;
 
             }
@@ -110,7 +129,7 @@ impl<'a> TileHandler<'a> {
         }
     }
 
-    pub fn draw_map(&self, max_screen_row: u32, canvas: &mut Canvas<Window>, map: &Map){
+    pub fn draw_map(&self, max_screen_col: u32 ,max_screen_row: u32, canvas: &mut Canvas<Window>, map: &Map){
         let mut col = 0;
         let mut row = 0;
         let mut x = 0;
@@ -131,7 +150,7 @@ impl<'a> TileHandler<'a> {
 
             // Copy the texture to the canvas at the player's position
             canvas.copy(image, src_rect, dest_rect).ok().unwrap();
-            if col == 15 {
+            if col == max_screen_col - 1 {
                 col = 0;
                 row += 1;
                 x = 0;

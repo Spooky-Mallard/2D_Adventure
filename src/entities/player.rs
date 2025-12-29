@@ -195,19 +195,15 @@ impl<'a> Player<'a> {
     pub fn update(&mut self, keys: &mut Keys) {
         if keys.w {
             self.direction = Direction::Up;
-            self.rect.y -= self.speed;
         }
         if keys.a {
             self.direction = Direction::Left;
-            self.rect.x -= self.speed;
         }
         if keys.s {
             self.direction = Direction::Down;
-            self.rect.y += self.speed;
         }
         if keys.d {
             self.direction = Direction::Right;
-            self.rect.x += self.speed;
         }
     }
 
