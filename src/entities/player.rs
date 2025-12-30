@@ -9,19 +9,10 @@ use sdl3::{
     video::{Window, WindowContext}
 };
 
-use crate::events::{
-    key_handler::Keys
-};
+use crate::{entities::camera::Camera, events::{
+    collision_handler::{CollisionDetector, HitBox}, key_handler::{ Direction, Keys}
+}, tiles::tile_handler::{self, Map, TileHandler}};
 
-/// Represents the four cardinal directions the player can face.
-/// Used as keys in the animation HashMap to select appropriate sprite sets.
-#[derive(Eq, Hash, PartialEq)]
-enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
-}
 
 /// Manages a sprite animation sequence.
 /// 
@@ -72,7 +63,8 @@ pub struct Player<'a> {
     pub rect: Rect,                                       // Position and size (hitbox)
     direction: Direction,                                 // Current facing direction
     walking_animation: HashMap<Direction, Animations<'a>>, // Animation for each direction
-    pub change_sprite: bool                               // Signal from main loop to advance frame
+    pub change_sprite: bool,                             // Signal from main loop to advance frame
+    pub on_collision: bool
 }
 
 impl<'a> Player<'a> {
@@ -137,7 +129,8 @@ impl<'a> Player<'a> {
             speed: speed,
             direction: Direction::Down,  // Start facing down
             walking_animation: walking_animations,
-            change_sprite: false
+            change_sprite: false,
+            on_collision: false
         }
     }
     
@@ -192,7 +185,24 @@ impl<'a> Player<'a> {
     /// 
     /// # Arguments
     /// * `keys` - Current state of WASD keys
-    pub fn update(&mut self, keys: &mut Keys) {
+    pub fn update(
+        &mut self, 
+        keys: &mut Keys, 
+        map: &Map,
+        collision_handler: &CollisionDetector, 
+        tile_handler: &TileHandler,
+        camera: &Camera
+    ) {
+        let hit_box = HitBox::new(
+            camera.camera_x.abs() + self.rect.x + 8,
+            camera.camera_y.abs() + self.rect.y + 16,
+            (camera.camera_x.unsigned_abs() + self.rect.x.unsigned_abs()) / tile_handler.tile_size + 1,
+            (camera.camera_y.unsigned_abs() + self.rect.y.unsigned_abs()) / tile_handler.tile_size + 1
+        );
+        println!("Player position: X: {}, Y: {}", self.rect.x, self.rect.y);
+        
+        self.on_collision = collision_handler.check(hit_box, map, &self.direction);
+
         if keys.w {
             self.direction = Direction::Up;
         }
@@ -205,6 +215,7 @@ impl<'a> Player<'a> {
         if keys.d {
             self.direction = Direction::Right;
         }
+       
     }
 
     /// Renders the player sprite to the screen.

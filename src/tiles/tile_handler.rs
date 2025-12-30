@@ -3,20 +3,25 @@ extern crate sdl3;
 use std::{fs, io::BufReader};
 use std::io::BufRead;
 
-use sdl3::{
-    rect::Rect, 
-    render::{Canvas, Texture, TextureCreator}, 
+use sdl3::{ 
+    render::{Texture, TextureCreator}, 
     surface::Surface, 
-    video::{Window, WindowContext}
+    video::{WindowContext}
 };
+
+pub struct Pixel{
+    pub x: i32,
+    pub y: i32,
+    pub index: u32
+}
 
 pub struct Tile<'a> {
     pub image: Texture<'a>,
-    collision: bool
+    pub immovable: bool
 }
 // [[i32; 16]; 12]
 pub struct Map{
-    pub map: Vec<Vec<i32>>
+    pub map: Vec<Vec<Pixel>>
 }
 
 pub struct TileHandler<'a>{
@@ -24,6 +29,12 @@ pub struct TileHandler<'a>{
     pub tile_size: u32,
     pub maps: Vec<Map>
 
+}
+
+impl Pixel{
+    fn new(x: i32, y: i32, index: u32) -> Self {
+        Self { x, y, index}
+    }
 }
 
 impl Map {
@@ -40,7 +51,7 @@ impl<'a> Tile<'a> {
     fn new(image: Texture<'a>) -> Self {
         Self { 
             image: image,
-            collision: false
+            immovable: false
         }
     }
 }
@@ -51,6 +62,9 @@ impl<'a> TileHandler<'a> {
         let mut tile_handler = Self { tiles: Vec::new() , tile_size: tile_size, maps: Vec::new()};
         tile_handler.load_tiles(texture_creator);
         tile_handler.load_maps();
+        tile_handler.tiles[1].immovable = true;
+        tile_handler.tiles[2].immovable = true;
+        tile_handler.tiles[4].immovable = true;
         tile_handler
     }
     
@@ -118,7 +132,14 @@ impl<'a> TileHandler<'a> {
                 
                 'loop2: for tile in line.split_whitespace(){
                     if tile == "\n" {continue 'loop2}
-                    col_vec.push(tile.parse().unwrap());
+
+                    col_vec.push(
+                        Pixel::new(
+                            col_vec.len() as i32 * self.tile_size as i32, 
+                            row as i32 * self.tile_size as i32,
+                            tile.parse().unwrap()
+                        )
+                    );
                 }
 
                 map.map.insert(row, col_vec);
@@ -129,38 +150,38 @@ impl<'a> TileHandler<'a> {
         }
     }
 
-    pub fn draw_map(&self, max_screen_col: u32 ,max_screen_row: u32, canvas: &mut Canvas<Window>, map: &Map){
-        let mut col = 0;
-        let mut row = 0;
-        let mut x = 0;
-        let mut y= 0;
+    // pub fn draw_map(&self, max_screen_col: u32 ,max_screen_row: u32, canvas: &mut Canvas<Window>, map: &Map){
+    //     let mut col = 0;
+    //     let mut row = 0;
+    //     let mut x = 0;
+    //     let mut y= 0;
 
-        while row < max_screen_row {
-            let image = &self.tiles[map.map[row as usize][col as usize] as usize].image;
+    //     while row < max_screen_row {
+    //         let image = &self.tiles[map.map[row as usize][col as usize] as usize].image;
 
-            // Query the texture to get its dimensions
-            let image_attributes = image.query();
+    //         // Query the texture to get its dimensions
+    //         let image_attributes = image.query();
             
-            // Define source rectangle (full texture)
-            let src_rect = Rect::new(0, 0, image_attributes.width, image_attributes.height);
+    //         // Define source rectangle (full texture)
+    //         let src_rect = Rect::new(0, 0, image_attributes.width, image_attributes.height);
 
 
-            let dest_rect = Rect::new(x, y, image_attributes.width, image_attributes.height);
+    //         let dest_rect = Rect::new(x, y, image_attributes.width, image_attributes.height);
 
 
-            // Copy the texture to the canvas at the player's position
-            canvas.copy(image, src_rect, dest_rect).ok().unwrap();
-            if col == max_screen_col - 1 {
-                col = 0;
-                row += 1;
-                x = 0;
-                y += image_attributes.height as i32;
-            }
-            else{
-                col += 1;
-                x += image_attributes.width as i32;
-            }
-        }
+    //         // Copy the texture to the canvas at the player's position
+    //         canvas.copy(image, src_rect, dest_rect).ok().unwrap();
+    //         if col == max_screen_col - 1 {
+    //             col = 0;
+    //             row += 1;
+    //             x = 0;
+    //             y += image_attributes.height as i32;
+    //         }
+    //         else{
+    //             col += 1;
+    //             x += image_attributes.width as i32;
+    //         }
+    //     }
         
-    }
+    // }
 }

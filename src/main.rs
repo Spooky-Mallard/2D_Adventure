@@ -1,7 +1,7 @@
 extern crate sdl3;
 
 use sdl3::{
-    event::Event,
+    event::Event, rect::Rect,
 };
 use std::time::{Instant};
 
@@ -21,6 +21,8 @@ mod tiles;
 use tiles::{
     tile_handler::TileHandler
 };
+
+use crate::events::collision_handler::{self, CollisionDetector};
 
 /// Entry point for the 2D Adventure game.
 /// 
@@ -54,6 +56,7 @@ fn main() -> Result< (), String> {
     let mut canvas = window.into_canvas();
     let texture_creator = canvas.texture_creator();
     let tile_handler = TileHandler::new(tile_size, &texture_creator);
+    let collision_handler = CollisionDetector::new(&tile_handler, tile_size);
     canvas.clear();
 
     // ========== INPUT STATE ==========
@@ -71,8 +74,8 @@ fn main() -> Result< (), String> {
     // ========== PLAYER INITIALIZATION ==========
     // Create player at position (100, 100) with speed 3 pixels per frame
     let mut camera: Camera = Camera::new(
-        100,
-        100,
+        -100,
+        -100,
         screen_width, 
         screen_height, 
         3
@@ -112,8 +115,15 @@ fn main() -> Result< (), String> {
 
             // ===== UPDATE PHASE =====
             // Update player position based on current key states\
-            camera.update(&mut keys);
-            player.update(&mut keys);
+            camera.update(&mut keys, player.on_collision);
+            player.on_collision = false;
+            player.update(
+                &mut keys, 
+                &tile_handler.maps[1], 
+                &collision_handler, 
+                &tile_handler,
+                &camera
+            );
 
             // ===== ANIMATION TIMING =====
             // Switch animation frame every 12 game frames (~200ms at 60 FPS)
@@ -139,6 +149,7 @@ fn main() -> Result< (), String> {
             // tile_handler.draw_map( max_screen_row, &mut canvas, &tile_handler.maps[0]);
                                                    // Clear previous frame
             player.render(&mut canvas, &keys);      // Draw player sprite
+            canvas.draw_rect(Rect::new(player.rect.x + 8, player.rect.y + 16, 32, 32)).ok();
             canvas.present();                       // Display rendered frame
 
             // ===== FRAME TIME MANAGEMENT =====

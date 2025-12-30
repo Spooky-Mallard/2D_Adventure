@@ -15,6 +15,18 @@ pub struct Keys {
     pub d: bool   // Move right
 }
 
+/// Represents the four cardinal directions the player can face.
+/// Used as keys in the animation HashMap to select appropriate sprite sets.
+#[derive(Eq, Hash, PartialEq)]
+#[derive(Debug)]
+pub enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
+
 /// Processes SDL keyboard events and updates the key state accordingly.
 /// 
 /// This function handles both KeyDown and KeyUp events for the WASD keys,

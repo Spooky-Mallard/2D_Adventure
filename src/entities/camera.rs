@@ -5,14 +5,14 @@ use sdl3::{
 };
 
 use crate::{
-    events::key_handler::Keys, 
+    events::key_handler::{Direction, Keys}, 
     tiles::tile_handler::{self, Map, TileHandler}
 };
 
 pub struct Camera{
     speed: i32,
-    camera_x: i32,
-    camera_y: i32,
+    pub camera_x: i32,
+    pub camera_y: i32,
     camera_screen_width: u32,
     camera_screen_height: u32
 }
@@ -28,19 +28,22 @@ impl Camera {
         }
     }
 
-    pub fn update(&mut self, keys: &mut Keys) {
-        if keys.w {
-            self.camera_y += self.speed;
+    pub fn update(&mut self, keys: &mut Keys, on_collision: bool) {
+        if !on_collision{
+            if keys.w {
+                self.camera_y += self.speed;
+            }
+            if keys.a {
+                self.camera_x += self.speed;
+            }
+            if keys.s {
+                self.camera_y -= self.speed;
+            }
+            if keys.d {
+                self.camera_x -= self.speed;
+            }
         }
-        if keys.a {
-            self.camera_x += self.speed;
-        }
-        if keys.s {
-            self.camera_y -= self.speed;
-        }
-        if keys.d {
-            self.camera_x -= self.speed;
-        }
+        
     }
 
     pub fn draw_camera(
@@ -69,7 +72,10 @@ impl Camera {
                    col >= start_world_tile_x &&
                    col < start_world_tile_x + max_screen_col + 1
                 {
-                    let image = &tile_handler.tiles[map.map[row as usize][col as usize] as usize].image;
+                    let image = &tile_handler.tiles[map
+                        .map[row as usize][col as usize]
+                        .index as usize]
+                        .image;
            
                     // Define source rectangle (full texture)
                     let src_rect = Rect::new(0, 0, tile_handler.tile_size as u32, tile_handler.tile_size as u32);
